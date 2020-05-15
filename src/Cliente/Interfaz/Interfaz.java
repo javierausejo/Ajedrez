@@ -7,7 +7,6 @@ import Clases.Mensaje.MensajeMovimiento;
 import Cliente.HiloCliente;
 import Cliente.Interfaz.Tablero.Casilla;
 import Cliente.Interfaz.Tablero.Figuras.Figura;
-import Cliente.Interfaz.Tablero.Figuras.Peon;
 import Cliente.Interfaz.Tablero.Posicion;
 import Cliente.Interfaz.Tablero.Tablero;
 
@@ -447,17 +446,13 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
             pnlTablero.moverFigura(posOrigen, posDestino);
 
             // comprobamos si hay jaque
-            boolean jaque = pnlTablero.comprobarJaque(arrayTablero[posDestino.getFila()][posDestino.getColumna()]);
-            if (jaque == true) {
-                modelo.addElement(jug + " >>> Aviso de JAQUE.");
-            }
-
-            // promocionamos peón si fuera preciso
-            if (arrayTablero[posDestino.getFila()][posDestino.getColumna()].getFigura() instanceof Peon) {
-                if (posDestino.getFila() == 7) { // pr
-                    System.out.println("hola1");
-                } else if (posDestino.getFila() == 0) {
-                    System.out.println("Hola2");
+            Posicion jaque = pnlTablero.comprobarJaque(arrayTablero[posDestino.getFila()][posDestino.getColumna()]);
+            if (jaque != null) {
+                boolean jaqueMate = pnlTablero.comprobarJaqueMate(jaque);
+                if (jaqueMate) {
+                    modelo.addElement(jug + " >>> Se acabó la partida. JAQUE MATE.");
+                } else {
+                    modelo.addElement(jug + " >>> Aviso de JAQUE.");
                 }
             }
 

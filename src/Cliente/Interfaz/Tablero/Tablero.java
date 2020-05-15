@@ -2,12 +2,19 @@ package Cliente.Interfaz.Tablero;
 
 import Cliente.HiloCliente;
 import Cliente.Interfaz.Tablero.Figuras.*;
+import Cliente.Interfaz.Tablero.Figuras.Bucle.Alfil;
+import Cliente.Interfaz.Tablero.Figuras.Bucle.FiguraBucle;
+import Cliente.Interfaz.Tablero.Figuras.Bucle.Reina;
+import Cliente.Interfaz.Tablero.Figuras.Bucle.Torre;
+import Cliente.Interfaz.Tablero.Figuras.NoBucle.Caballo;
+import Cliente.Interfaz.Tablero.Figuras.NoBucle.Peon;
+import Cliente.Interfaz.Tablero.Figuras.NoBucle.Rey;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashSet;
+import java.util.*;
 
 public class Tablero extends JPanel implements ActionListener {
 
@@ -292,7 +299,7 @@ public class Tablero extends JPanel implements ActionListener {
                     hsPosiblesMovimientos.clear(); // limpiamos hashset
                 }
                 // añadimos los posibles movimientos sobre la última figura pinchada
-                hsPosiblesMovimientos = figura.getPosiblesMovimientos(new Posicion(fila, col), arrayTablero);
+                hsPosiblesMovimientos = figura.getPosiblesMovimientos(new Posicion(fila, col), arrayTablero, false);
                 for (Posicion p : hsPosiblesMovimientos) {
                     arrayTablero[p.getFila()][p.getColumna()].colorearBorde();
                 }
@@ -355,24 +362,125 @@ public class Tablero extends JPanel implements ActionListener {
      *
      * @param casilla
      */
-    public boolean comprobarJaque(Casilla casilla) {
-        boolean jaque = false;
+    public Posicion comprobarJaque(Casilla casilla) {
         Figura figura = casilla.getFigura();
         Figura figuraAux;
         int fila, columna;
-        Posicion pos;
+        Posicion pos = null;
         // limpiamos hsPosiblesMovimientos y detectamos los posibles movimientos de la figura indicada
         hsPosiblesMovimientos.clear();
-        hsPosiblesMovimientos = figura.getPosiblesMovimientos(casilla.getPosicion(), arrayTablero);
+        hsPosiblesMovimientos = figura.getPosiblesMovimientos(casilla.getPosicion(), arrayTablero, false);
         // recorremos hsPosiblesMovimientos y comprobamos si hay posibilidad de comerse al rey rival.
         for (Posicion posicion : hsPosiblesMovimientos) {
             fila = posicion.getFila();
             columna = posicion.getColumna();
             figuraAux = arrayTablero[fila][columna].getFigura();
             if (figuraAux instanceof Rey) {
-                jaque = true;
+                pos = posicion;
+                break; // salimos del bucle
             }
         }
-        return jaque;
+        return pos;
+    }
+
+    /**
+     * Método que comprueba si se hace jaque mate.
+     *
+     * @param posicion del rey rival
+     * @return un booleano que indica si jaque mate o no.
+     */
+    public boolean comprobarJaqueMate(Posicion posicion) {
+        boolean jaqueMate = true;
+
+        // detectamos los posibles movimientos del rey rival
+        int filaRey = posicion.getFila();
+        int colRey = posicion.getColumna();
+        Figura reyRival = arrayTablero[filaRey][colRey].getFigura();
+        HashSet<Posicion> hsMovimientosReyRival = reyRival.getPosiblesMovimientos(posicion, arrayTablero, false);
+        hsMovimientosReyRival.add(posicion); // añadimos la actual posición del rey, además
+
+        // creamos un HashMap con las Casillas de hsMovimientosReyRival como clave, y una variable array de Posicion
+        // como clave que comprende las posiciones de las figuras que pueden llegar a la posición que está de clave.
+        // si el tamaño de ese array es de 1, debemos comprobar si la figura en cuestión que puede llegar, puede ser
+        // comida previamente por equipo rival desmantelando el JAQUE MATE
+        HashMap<Posicion, ArrayList<Casilla>> hmJaqueMate = new HashMap<>();
+
+        Figura figura;
+        Posicion pos;
+        HashSet<Posicion> hsMovimientosAux = null;
+        ArrayList<Casilla> arrayCasillas;
+        for (int fila = 0; fila < DIM_TABLERO; fila++) {
+            for (int col = 0; col < DIM_TABLERO; col++) {
+                figura = arrayTablero[fila][col].getFigura();
+                pos = arrayTablero[fila][col].getPosicion();
+                if (figura != null && (figura.esMia() != arrayTablero[posicion.getFila()][posicion.getColumna()].getFigura().esMia())) {
+                    hsMovimientosAux = figura.getPosiblesMovimientos(pos, arrayTablero, true);
+                    // recorremos hsMovimientosAux y hsJaqueMate en busca de coincidencia
+                    for (Posicion p : hsMovimientosAux) {
+                        for (Posicion p1 : hsMovimientosReyRival) {
+                            if (p.getFila() == p1.getFila() && p.getColumna() == p1.getColumna()) {
+                                // si no existe un registro para p1, inicializamos arrayCasillas
+                                if (hmJaqueMate.get(p1) == null) {
+                                    arrayCasillas = new ArrayList<>();
+                                } else { // de lo contrario, tomamos el valor del array y deberemos actualizarlo
+                                    arrayCasillas = hmJaqueMate.get(p1);
+                                }
+                                arrayCasillas.add(arrayTablero[fila][col]);
+                                hmJaqueMate.put(p1, arrayCasillas);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // si el tamaño de hmJaqueMate es igual al de hsMovimientosReyRival, cubre todas las posibles posiciones
+        // que pueda tomar el rey y aparentemente puede ser jaque mate
+        if (hmJaqueMate.size() != hsMovimientosReyRival.size()) {
+            jaqueMate = false;
+        } else {
+            // comprobamos que figuras pueden comerse al rey en su actual posición
+            // si el tamaño de dicho array es de 1, debemos comprobar si a esa figura se le puede "taponar" el
+            // movimiento y/o, directamente, comérsela para evitar el jaque mate
+            // (partimos de la base de que no se pueden taponar 2 movimientos a la vez)
+            arrayCasillas = hmJaqueMate.get(posicion);
+            if (arrayCasillas.size() == 1) {
+                HashSet<Posicion> hsRutaJaque = new HashSet<>();
+                Casilla casilla = arrayCasillas.get(0);
+                figura = casilla.getFigura();
+                pos = casilla.getPosicion();
+                // las figuras que se pueden "taponar" son aquellas cuya lógica de movimiento responde a un bucle
+                // que les permite avanzar más de una casilla adyacente para comer (Torre, Alfil, Reina)
+                if (figura instanceof FiguraBucle) {
+                    FiguraBucle figuraBucle = (FiguraBucle) figura;
+                    hsRutaJaque = figuraBucle.detectarRutaJaque(pos, arrayTablero);
+                }
+                // comprobamos si las figuras rivales pueden evitar el jaquemate buscando coincidencias entre
+                // sus posibles movimientos y los de hsMovimientosAux
+                for (int fila = 0; fila < DIM_TABLERO; fila++) {
+                    for (int col = 0; col < DIM_TABLERO; col++) {
+                        if (arrayTablero[fila][col].getFigura() != null
+                                && arrayTablero[fila][col].getFigura().esMia() == arrayTablero[posicion.getFila()][posicion.getColumna()].getFigura().esMia()) {
+                            figura = arrayTablero[fila][col].getFigura();
+                            if (!(figura instanceof Rey)) {
+                                for (Posicion p : hsRutaJaque) {
+                                    for (Posicion p1 : figura.getPosiblesMovimientos(new Posicion(fila, col), arrayTablero, false)) {
+                                        if (p.getFila() == p1.getFila() && p.getColumna() == p1.getColumna()) {
+                                            jaqueMate = false;
+                                            break;
+                                        }
+                                    }
+                                    if (!jaqueMate) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return jaqueMate;
     }
 }
