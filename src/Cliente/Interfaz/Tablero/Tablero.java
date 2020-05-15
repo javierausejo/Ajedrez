@@ -21,18 +21,18 @@ public class Tablero extends JPanel implements ActionListener {
     // CONSTANTES DE CLASE
     public final static int DIM_TABLERO = 8;
     public final static Dimension DIM_BOTON_TABLERO = new Dimension(65, 65);
-    private final static String TORREBLANCA = "Recursos/Fichas/Blancas/torre.png";
-    private final static String TORRENEGRA = "Recursos/Fichas/Negras/torre.png";
-    private final static String CABALLOBLANCO = "Recursos/Fichas/Blancas/caballo.png";
-    private final static String CABALLONEGRO = "Recursos/Fichas/Negras/caballo.png";
-    private final static String ALFILBLANCO = "Recursos/Fichas/Blancas/alfil.png";
-    private final static String ALFILNEGRO = "Recursos/Fichas/Negras/alfil.png";
-    private final static String REYBLANCO = "Recursos/Fichas/Blancas/rey.png";
-    private final static String REYNEGRO = "Recursos/Fichas/Negras/rey.png";
-    private final static String REINABLANCA = "Recursos/Fichas/Blancas/reina.png";
-    private final static String REINANEGRA = "Recursos/Fichas/Negras/reina.png";
-    private final static String PEONBLANCO = "Recursos/Fichas/Blancas/peon.png";
-    private final static String PEONNEGRO = "Recursos/Fichas/Negras/peon.png";
+    private final static String TORREBLANCA = "Recursos/Figuras/Blancas/torre.png";
+    private final static String TORRENEGRA = "Recursos/Figuras/Negras/torre.png";
+    private final static String CABALLOBLANCO = "Recursos/Figuras/Blancas/caballo.png";
+    private final static String CABALLONEGRO = "Recursos/Figuras/Negras/caballo.png";
+    private final static String ALFILBLANCO = "Recursos/Figuras/Blancas/alfil.png";
+    private final static String ALFILNEGRO = "Recursos/Figuras/Negras/alfil.png";
+    private final static String REYBLANCO = "Recursos/Figuras/Blancas/rey.png";
+    private final static String REYNEGRO = "Recursos/Figuras/Negras/rey.png";
+    private final static String REINABLANCA = "Recursos/Figuras/Blancas/reina.png";
+    private final static String REINANEGRA = "Recursos/Figuras/Negras/reina.png";
+    private final static String PEONBLANCO = "Recursos/Figuras/Blancas/peon.png";
+    private final static String PEONNEGRO = "Recursos/Figuras/Negras/peon.png";
 
     // VARIABLES DE INSTANCIA
     private HiloCliente hiloCliente;
