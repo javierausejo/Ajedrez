@@ -80,10 +80,16 @@ public class Alfil extends FiguraBucle {
         }
         // añadimos la posición actual
         hsRutaJaque.add(new Posicion(fila, col));
-        while (fila != posRey.getFila() && col != posRey.getColumna()) {
+        Posicion posicion;
+        boolean cumple = true;
+        while (cumple) {
             fila += filaAux;
             col += colAux;
-            hsRutaJaque.add(new Posicion(fila, col));
+            posicion = new Posicion(fila, col);
+            hsRutaJaque.add(posicion);
+            if (fila == posRey.getFila() && col == posRey.getColumna()) {
+                cumple = false;
+            }
         }
 
         return hsRutaJaque;

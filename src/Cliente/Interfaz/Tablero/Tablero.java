@@ -454,6 +454,8 @@ public class Tablero extends JPanel implements ActionListener {
                 if (figura instanceof FiguraBucle) {
                     FiguraBucle figuraBucle = (FiguraBucle) figura;
                     hsRutaJaque = figuraBucle.detectarRutaJaque(pos, arrayTablero);
+                } else { // debemos añadir en hsRutaJaque pra las FiguraNoBucle su posición actual
+                    hsRutaJaque.add(pos);
                 }
                 // comprobamos si las figuras rivales pueden evitar el jaquemate buscando coincidencias entre
                 // sus posibles movimientos y los de hsMovimientosAux
