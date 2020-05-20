@@ -4,6 +4,8 @@ import Cliente.Interfaz.Tablero.Casilla;
 import Cliente.Interfaz.Tablero.Figuras.Bucle.FiguraBucle;
 import Cliente.Interfaz.Tablero.Posicion;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class Torre extends FiguraBucle {
@@ -58,9 +60,16 @@ public class Torre extends FiguraBucle {
                 E = comprobarBucle(hsPosiblesMovimientos, arrayTablero, p, E, detectarJaqueMate);
             }
         }
+        
         return hsPosiblesMovimientos;
     }
 
+    /**
+     * Método que en virtud de la posición de la torre, nos ayuda a detectar cuál de sus rutas pone en jaque al rey.
+     * @param pos
+     * @param arrayTablero
+     * @return un hashset con la ruta que sigue la torre
+     */
     @Override
     public HashSet<Posicion> detectarRutaJaque(Posicion pos, Casilla[][] arrayTablero) {
         HashSet<Posicion> hsRutaJaque = new HashSet<>();
@@ -97,5 +106,39 @@ public class Torre extends FiguraBucle {
         }
 
         return hsRutaJaque;
+    }
+
+    @Override
+    public HashMap<Posicion, ArrayList<Casilla>> depurarRutaJaque(Casilla casillaTorre, Posicion posRey,
+                                                                  Casilla[][] arrayTablero,
+                                                                  HashMap<Posicion, ArrayList<Casilla>> hmJaqueMate) {
+        Posicion posicion = casillaTorre.getPosicion();
+        int filaTorre = posicion.getFila(), colTorre = posicion.getColumna();
+        int filaRey = posRey.getFila(), colRey = posRey.getColumna();
+        int colAux = 0, filaAux = 0;
+        if (filaRey == filaTorre) {
+            if (colRey > colTorre) {
+                colAux = 1;
+            } else {
+                colAux = -1;
+            }
+        } else if (colRey == colTorre) {
+            if (filaRey > filaTorre) {
+                filaAux = 1;
+            } else {
+                filaAux = -1;
+            }
+        }
+
+        // determinamos si es posible actualizar el hmJAqueMate, si entra dentro de las condiciones
+        if (filaRey + filaAux <= 7 && filaRey + filaAux >= 0 && colRey + colAux <= 7 && colRey + colAux >= 0) {
+            if (arrayTablero[filaRey + filaAux][colRey + colAux].getFigura() == null) { // está vacía
+                ArrayList<Casilla> arrayCasillas = new ArrayList<>();
+                arrayCasillas.add(casillaTorre);
+                // añadimos un nuevo registro a hmJaqueMate
+                hmJaqueMate.put(new Posicion(filaRey + filaAux, colRey + colAux), arrayCasillas);
+            }
+        }
+        return hmJaqueMate;
     }
 }

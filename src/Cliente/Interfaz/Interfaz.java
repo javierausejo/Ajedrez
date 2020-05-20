@@ -12,7 +12,7 @@ import Cliente.Interfaz.Tablero.Tablero;
 
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.text.DefaultCaret;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -52,9 +52,10 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
     private JLabel lblUsuario1, lblUsuario2, lblTiempo1, lblTiempo2;
     private Tablero pnlTablero;
     private Casilla[][] arrayTablero;
+    private JList jlist;
     private DefaultListModel modelo;
-    private JTextArea txaChat;
-    private JScrollPane scpChat;
+    private JTextPane txpChat;
+    private StyledDocument doc;
     private HiloCliente hiloCliente;
     private Jugador jugador;
 
@@ -230,7 +231,7 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
 
         // creamos un scrollpane con jlist que refleje los movimientos de la partida
         // se añade al centro de pnlRegistro
-        JList jlist = new JList();
+        jlist = new JList();
         modelo = new DefaultListModel();
         jlist.setModel(modelo);
         // añadimos scrollpane al jlist
@@ -252,17 +253,11 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         JPanel pnlChat = new JPanel(new BorderLayout());
         pnlChat.setBorder(new EmptyBorder(ESPACIO, 0, 0, 0));
 
-        txaChat = new JTextArea();
-        txaChat.setEditable(false);
-        txaChat.setMargin(new Insets(ESPACIO, ESPACIO, ESPACIO, ESPACIO));
-        // si el texto no cabe en el jtextarea, lo divide en líneas
-        txaChat.setLineWrap(true);
-        txaChat.setWrapStyleWord(true);
-        // baja scroll automáticamente con la llegada de mensajes
-        DefaultCaret caret = (DefaultCaret) txaChat.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        txpChat = new JTextPane();
+        txpChat.setEditable(false);
+        doc = txpChat.getStyledDocument();
 
-        scpChat = new JScrollPane(txaChat);
+        JScrollPane scpChat = new JScrollPane(txpChat);
         scpChat.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         pnlChat.add(scpChat, BorderLayout.CENTER);
 
@@ -301,7 +296,7 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
     public void setNicknames(Jugador jugador1, Jugador jugador2) {
         jugador = jugador1;
         lblUsuario1.setText(jugador1.getIdJugador() + " - " + jugador1.getNickName());
-        lblUsuario2.setText(jugador2.getIdJugador() + " - " +jugador2.getNickName());
+        lblUsuario2.setText(jugador2.getIdJugador() + " - " + jugador2.getNickName());
     }
 
     /**
@@ -314,9 +309,10 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         arrayTablero = pnlTablero.getArrayTablero();
 
         // limpiamos txaChat y el modelo del registro de movimientos
-        txaChat.setText("");
+        txpChat.setText("");
         modelo.clear();
 
+        txpChat.setEnabled(false);
         txtUsuario.setEnabled(true);
         btnConectar.setEnabled(true);
         btnDesconectar.setEnabled(false);
@@ -361,7 +357,7 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
      * Método que se invoca cuando el usuario cliente ya ha encontrado una partida
      * y necesita tener habilitados los elementos de tablero y chat correspondientes.
      *
-     * @param local  indica si el cliente juega con las fichas blancas (true) o las negras (false)
+     * @param local indica si el cliente juega con las fichas blancas (true) o las negras (false)
      */
     public void setModoPartida(boolean local) {
         pnlTablero.comienzoPartida(hiloCliente, local);
@@ -373,6 +369,7 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                 arrayTablero[i][j].getBtnCasilla().setEnabled(true);
             }
         }
+        txpChat.setEnabled(true);
         txtMensaje.setEnabled(true);
 
         // cambiamos color y mensaje del txtEstado
@@ -408,56 +405,78 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
 
         if (mensaje instanceof MensajeChat) {
             MensajeChat m = (MensajeChat) mensaje;
-            txaChat.append(">>> " + jug + "\n");
-            txaChat.append(m.getTxt() + "\n");
-            // desplazamos barra de scroll del chat a medida que escribimos
-            scpChat.getVerticalScrollBar().setValue(scpChat.getVerticalScrollBar().getMaximum());
-        } else if (mensaje instanceof MensajeMovimiento) {
-            MensajeMovimiento m = (MensajeMovimiento) mensaje;
-            String valoresColumna = "ABCDEFGH";
-            Figura figuraOrigen = m.getCasillaOrigen().getFigura();
-            // damos formato al mensaje según quién lo envíe
-            Posicion posOrigen = m.getCasillaOrigen().getPosicion();
-            Posicion posDestino = m.getCasillaDestino().getPosicion();
-            char filaOrigenAux = 0, filaDestinoAux = 0;
-            if (enviadoPorMi) { // no cambiamos valores si somos nosotros quienes movemos la figura
-                filaOrigenAux = (char) ((posOrigen.getFila() + 1) + '0');
-                filaDestinoAux = (char) ((posDestino.getFila() + 1) + '0');
-            } else { // cambiamos si recibimos movimiento del rival
-                filaOrigenAux = (char) ((8 - posOrigen.getFila()) + '0');
-                filaDestinoAux = (char) ((8 - posDestino.getFila()) + '0');
-                posOrigen = new Posicion(7 - posOrigen.getFila(), 7 - posOrigen.getColumna());
-                posDestino = new Posicion(7 - posDestino.getFila(), 7 - posDestino.getColumna());
-            }
+            SimpleAttributeSet izquierda = new SimpleAttributeSet();
+            StyleConstants.setAlignment(izquierda, StyleConstants.ALIGN_LEFT);
+            StyleConstants.setForeground(izquierda, Color.RED);
 
-            if (!m.getSeCome()) {
-                modelo.addElement(jug + " >>> Mueve " + figuraOrigen.getNom() + " de " + valoresColumna.charAt(posOrigen.getColumna()) + " - "
-                        + filaOrigenAux + " a " + valoresColumna.charAt(posDestino.getColumna()) + " - "
-                        + filaDestinoAux + ".");
-            } else {
-                Figura figuraAComer = m.getCasillaDestino().getFigura();
-                modelo.addElement(jug + " >>> Mueve " + figuraOrigen.getNom() + " de " + valoresColumna.charAt(posOrigen.getColumna()) + " - "
-                        + filaOrigenAux + " a " + valoresColumna.charAt(posDestino.getColumna()) + " - "
-                        + filaDestinoAux + ".");
-                modelo.addElement(jug + " >>> Come " + figuraAComer.getNom() + " rival.");
-            }
+            SimpleAttributeSet dcha = new SimpleAttributeSet();
+            StyleConstants.setAlignment(dcha, StyleConstants.ALIGN_RIGHT);
+            StyleConstants.setForeground(dcha, Color.BLUE);
 
-            // movemos la figura en el tablero
-            pnlTablero.moverFigura(posOrigen, posDestino);
-
-            // comprobamos si hay jaque
-            Posicion jaque = pnlTablero.comprobarJaque(arrayTablero[posDestino.getFila()][posDestino.getColumna()]);
-            if (jaque != null) {
-                boolean jaqueMate = pnlTablero.comprobarJaqueMate(jaque);
-                if (jaqueMate) {
-                    modelo.addElement(jug + " >>> Se acabó la partida. JAQUE MATE.");
-                } else {
-                    modelo.addElement(jug + " >>> Aviso de JAQUE.");
+            try {
+                String txt = m.getTxt();
+                if (!txpChat.getText().isEmpty()) {
+                    txt = "\n" + txt;
                 }
-            }
+                if (enviadoPorMi) {
+                    doc.insertString(doc.getLength(), txt, izquierda);
+                    doc.setParagraphAttributes(doc.getLength(), 1, izquierda, false);
+                } else {
+                    doc.insertString(doc.getLength(), txt, dcha);
+                    doc.setParagraphAttributes(doc.getLength(), 1, dcha, false);
+                }
+            } catch (BadLocationException e) { e.printStackTrace(); }
+            // para que el scroll baje automáticamente
+            txpChat.setCaretPosition(doc.getLength());
+        } else if (mensaje instanceof MensajeMovimiento) {
+            try {
+                MensajeMovimiento m = (MensajeMovimiento) mensaje;
+                String valoresColumna = "ABCDEFGH";
+                Figura figuraOrigen = m.getCasillaOrigen().getFigura();
+                // damos formato al mensaje según quién lo envíe
+                Posicion posOrigen = m.getCasillaOrigen().getPosicion();
+                Posicion posDestino = m.getCasillaDestino().getPosicion();
+                char filaOrigenAux = 0, filaDestinoAux = 0;
+                if (enviadoPorMi) { // no cambiamos valores si somos nosotros quienes movemos la figura
+                    filaOrigenAux = (char) ((posOrigen.getFila() + 1) + '0');
+                    filaDestinoAux = (char) ((posDestino.getFila() + 1) + '0');
+                } else { // cambiamos si recibimos movimiento del rival
+                    filaOrigenAux = (char) ((8 - posOrigen.getFila()) + '0');
+                    filaDestinoAux = (char) ((8 - posDestino.getFila()) + '0');
+                    posOrigen = new Posicion(7 - posOrigen.getFila(), 7 - posOrigen.getColumna());
+                    posDestino = new Posicion(7 - posDestino.getFila(), 7 - posDestino.getColumna());
+                }
 
-            // cambiamos turno
-            pnlTablero.cambiarTurno();
+                if (!m.getSeCome()) {
+                    modelo.addElement(jug + " >>> Mueve " + figuraOrigen.getNom() + " de " + valoresColumna.charAt(posOrigen.getColumna()) + " - "
+                            + filaOrigenAux + " a " + valoresColumna.charAt(posDestino.getColumna()) + " - "
+                            + filaDestinoAux + ".");
+                } else {
+                    Figura figuraAComer = m.getCasillaDestino().getFigura();
+                    modelo.addElement(jug + " >>> Mueve " + figuraOrigen.getNom() + " de " + valoresColumna.charAt(posOrigen.getColumna()) + " - "
+                            + filaOrigenAux + " a " + valoresColumna.charAt(posDestino.getColumna()) + " - "
+                            + filaDestinoAux + ".");
+                    modelo.addElement(jug + " >>> Come " + figuraAComer.getNom() + " rival.");
+                }
+
+                // movemos la figura en el tablero
+                pnlTablero.moverFigura(posOrigen, posDestino);
+
+                // comprobamos si hay jaque
+                Posicion jaque = pnlTablero.comprobarJaque(arrayTablero[posDestino.getFila()][posDestino.getColumna()]);
+                if (jaque != null) {
+                    boolean jaqueMate = pnlTablero.comprobarJaqueMate(jaque);
+                    if (jaqueMate) {
+                        modelo.addElement(jug + " >>> Se acabó la partida. JAQUE MATE.");
+                    } else {
+                        modelo.addElement(jug + " >>> Aviso de JAQUE.");
+                    }
+                }
+                jlist.ensureIndexIsVisible(modelo.getSize() - 1);
+
+                // cambiamos turno
+                pnlTablero.cambiarTurno();
+            } catch (NullPointerException np) { }
         }
     }
 

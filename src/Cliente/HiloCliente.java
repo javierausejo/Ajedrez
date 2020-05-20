@@ -130,7 +130,7 @@ public class HiloCliente implements Runnable {
         }
     }
 
-    public void enviarMovimiento(Casilla casillaOrigen, Casilla casillaDestino, boolean seCome) {
+    public void  enviarMovimiento(Casilla casillaOrigen, Casilla casillaDestino, boolean seCome) {
         try {
             Mensaje mensaje = new MensajeMovimiento(jugador, casillaOrigen, casillaDestino, seCome);
             flujoEscritura.writeObject(mensaje);

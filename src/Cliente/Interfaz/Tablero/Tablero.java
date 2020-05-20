@@ -407,7 +407,7 @@ public class Tablero extends JPanel implements ActionListener {
 
         Figura figura;
         Posicion pos;
-        HashSet<Posicion> hsMovimientosAux = null;
+        HashSet<Posicion> hsMovimientosAux;
         ArrayList<Casilla> arrayCasillas;
         for (int fila = 0; fila < DIM_TABLERO; fila++) {
             for (int col = 0; col < DIM_TABLERO; col++) {
@@ -436,19 +436,32 @@ public class Tablero extends JPanel implements ActionListener {
 
         // si el tamaño de hmJaqueMate es igual al de hsMovimientosReyRival, cubre todas las posibles posiciones
         // que pueda tomar el rey y aparentemente puede ser jaque mate
+        arrayCasillas = hmJaqueMate.get(posicion);
+        Casilla casilla = arrayCasillas.get(0);
+        figura = casilla.getFigura();
+        pos = casilla.getPosicion();
+        boolean comprobar = false;
         if (hmJaqueMate.size() != hsMovimientosReyRival.size()) {
-            jaqueMate = false;
+            // detectamos para las figurasBucle si pueden llegar a potenciales posiciones del rey en caso de
+            // que este se mueva a una de ellas (ejemplo: mate del pasillo)
+            if ((figura instanceof FiguraBucle) && ((hmJaqueMate.size() == hsMovimientosReyRival.size() - 1))){
+                FiguraBucle figuraBucle = (FiguraBucle) figura;
+                figuraBucle.depurarRutaJaque(casilla, posicion, arrayTablero, hmJaqueMate);
+                if (hmJaqueMate.size() == hsMovimientosReyRival.size()) {
+                    comprobar = true;
+                }
+            }
         } else {
+            comprobar = true;
+        }
+        // comprobamos el valor del booleano, y si está a true entramos al if
+        if (comprobar) {
             // comprobamos que figuras pueden comerse al rey en su actual posición
             // si el tamaño de dicho array es de 1, debemos comprobar si a esa figura se le puede "taponar" el
             // movimiento y/o, directamente, comérsela para evitar el jaque mate
             // (partimos de la base de que no se pueden taponar 2 movimientos a la vez)
-            arrayCasillas = hmJaqueMate.get(posicion);
             if (arrayCasillas.size() == 1) {
                 HashSet<Posicion> hsRutaJaque = new HashSet<>();
-                Casilla casilla = arrayCasillas.get(0);
-                figura = casilla.getFigura();
-                pos = casilla.getPosicion();
                 // las figuras que se pueden "taponar" son aquellas cuya lógica de movimiento responde a un bucle
                 // que les permite avanzar más de una casilla adyacente para comer (Torre, Alfil, Reina)
                 if (figura instanceof FiguraBucle) {
@@ -462,7 +475,8 @@ public class Tablero extends JPanel implements ActionListener {
                 for (int fila = 0; fila < DIM_TABLERO; fila++) {
                     for (int col = 0; col < DIM_TABLERO; col++) {
                         if (arrayTablero[fila][col].getFigura() != null
-                                && arrayTablero[fila][col].getFigura().esMia() == arrayTablero[posicion.getFila()][posicion.getColumna()].getFigura().esMia()) {
+                                && arrayTablero[fila][col].getFigura().esMia() ==
+                                    arrayTablero[posicion.getFila()][posicion.getColumna()].getFigura().esMia()) {
                             figura = arrayTablero[fila][col].getFigura();
                             if (!(figura instanceof Rey)) {
                                 for (Posicion p : hsRutaJaque) {
@@ -481,6 +495,8 @@ public class Tablero extends JPanel implements ActionListener {
                     }
                 }
             }
+        } else {
+            jaqueMate = false;
         }
 
         return jaqueMate;

@@ -31,9 +31,8 @@ public abstract class Figura implements Serializable {
      *
      * @param posicion     la posición actual de la figura
      * @param arrayTablero el estado del tablero
+     * @param detectarJaqueMate si hay que detectar jaque mate o no
      * @return hashset de instancias Posicion.java
      */
     public abstract HashSet<Posicion> getPosiblesMovimientos(Posicion posicion, Casilla[][] arrayTablero, boolean detectarJaqueMate);
-
-
 }

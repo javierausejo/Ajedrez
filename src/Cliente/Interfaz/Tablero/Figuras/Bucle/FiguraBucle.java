@@ -5,6 +5,8 @@ import Cliente.Interfaz.Tablero.Figuras.Figura;
 import Cliente.Interfaz.Tablero.Figuras.NoBucle.Rey;
 import Cliente.Interfaz.Tablero.Posicion;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public abstract class FiguraBucle extends Figura {
@@ -27,7 +29,8 @@ public abstract class FiguraBucle extends Figura {
      * @param direccion             representa las coordenadas de la figura: norte, sur, este, oeste...
      * @return
      */
-    public boolean comprobarBucle(HashSet<Posicion> hsPosiblesMovimientos, Casilla[][] array, Posicion posicion, boolean direccion, boolean detectarJaqueMate) {
+    public boolean comprobarBucle(HashSet<Posicion> hsPosiblesMovimientos, Casilla[][] array, Posicion posicion,
+                                  boolean direccion, boolean detectarJaqueMate) {
         // detectamos si la fila y la columna enviadas entran dentro del tablero
         int fila = posicion.getFila();
         int columna = posicion.getColumna();
@@ -50,6 +53,12 @@ public abstract class FiguraBucle extends Figura {
         return direccion;
     }
 
+    /**
+     * Método que, en virtud de una posición del tablero, detecta si la figura que ocupa dicha posición llega al rey rival.
+     * @param pos
+     * @param arrayTablero
+     * @return
+     */
     public Posicion detectarPosicionReyRival(Posicion pos, Casilla[][] arrayTablero) {
         HashSet<Posicion> hsPosiblesMovimientos = getPosiblesMovimientos(pos, arrayTablero, false);
         Posicion posRey = null;
@@ -62,4 +71,21 @@ public abstract class FiguraBucle extends Figura {
         }
         return posRey;
     }
+
+
+    /**
+     * Método abstracto que dada la posición (variable posición) de una figura y las casillas que atraviesa para
+     * llegar hasta el rey rival (variable arrayCasillas), determina si potencialmente la figura en cuestión podría
+     * llegar a las posibles posiciones de dicho rey que nuestro método de detección de jaque no comprende.
+     * (Ejemplo: mate del pasillo)
+     * @param casillaFigura la casilla de la figura que pone al rey en jaque
+     * @param posRey la posición del rey en cuestión
+     * @param arrayTablero el estado actual del tablero en el momento del juego
+     * @param hmJaqueMate el hmJaqueMate a actualizar, llegado el caso.
+     * @return
+     */
+    public abstract HashMap<Posicion, ArrayList<Casilla>> depurarRutaJaque(Casilla casillaFigura,
+                                                                           Posicion posRey,
+                                                                           Casilla[][] arrayTablero,
+                                                                           HashMap<Posicion, ArrayList<Casilla>> hmJaqueMate);
 }

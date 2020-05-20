@@ -4,6 +4,8 @@ import Cliente.Interfaz.Tablero.Casilla;
 import Cliente.Interfaz.Tablero.Figuras.Bucle.FiguraBucle;
 import Cliente.Interfaz.Tablero.Posicion;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class Reina extends FiguraBucle {
@@ -115,5 +117,38 @@ public class Reina extends FiguraBucle {
         }
 
         return hsRutaJaque;
+    }
+
+    public HashMap<Posicion, ArrayList<Casilla>> depurarRutaJaque(Casilla casillaReina, Posicion posRey, Casilla[][] arrayTablero, HashMap<Posicion, ArrayList<Casilla>> hmJaqueMate) {
+        Posicion posicion = casillaReina.getPosicion();
+        int filaReina = posicion.getFila(), colReina = posicion.getColumna();
+        int filaRey = posRey.getFila(), colRey = posRey.getColumna();
+        int colAux = 0, filaAux = 0;
+
+        if (filaRey > filaReina) {
+            filaAux = 1;
+        } else if (filaRey < filaReina) {
+            filaAux =-1;
+        } else {
+            filaAux = 0;
+        }
+        if (colRey > colReina) {
+            colAux = 1;
+        } else if (colRey < colReina) {
+            colAux = -1;
+        } else {
+            colAux = 0;
+        }
+
+        // determinamos si es posible actualizar el hmJAqueMate, si entra dentro de las condiciones
+        if (filaRey + filaAux <= 7 && filaRey + filaAux >= 0 && colRey + colAux <= 7 && colRey + colAux >= 0) {
+            if (arrayTablero[filaRey + filaAux][colRey + colAux].getFigura() == null) { // está vacía
+                ArrayList<Casilla> arrayCasillas = new ArrayList<>();
+                arrayCasillas.add(casillaReina);
+                // añadimos un nuevo registro a hmJaqueMate
+                hmJaqueMate.put(new Posicion(filaRey + filaAux, colRey + colAux), arrayCasillas);
+            }
+        }
+        return hmJaqueMate;
     }
 }
