@@ -591,7 +591,12 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                                     "Derrota",
                                     JOptionPane.INFORMATION_MESSAGE);
                         }
+
+                        // movemos la figura en el tablero
+                        pnlTablero.moverFigura(posOrigen, posDestino);
+
                         desconectar();
+                        return;
                     }
                 }
 
