@@ -577,6 +577,22 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                             + filaOrigenAux + " a " + valoresColumna.charAt(posDestino.getColumna()) + " - "
                             + filaDestinoAux + ".");
                     modelo.addElement(jug + " >>> Come " + figuraAComer.getNom() + " rival.");
+
+                    // caso de comer rey
+                    if (figuraAComer instanceof Rey) {
+                        if (enviadoPorMi) {
+                            JOptionPane.showMessageDialog(this,
+                                    "¡Enhorabuena! Has ganado.",
+                                    "Victoria",
+                                    JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "¡Casi! Otra vez será.",
+                                    "Derrota",
+                                    JOptionPane.INFORMATION_MESSAGE);
+                        }
+                        desconectar();
+                    }
                 }
 
                 // movemos la figura en el tablero
