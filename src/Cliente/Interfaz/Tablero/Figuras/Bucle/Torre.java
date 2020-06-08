@@ -1,11 +1,10 @@
 package Cliente.Interfaz.Tablero.Figuras.Bucle;
 
 import Cliente.Interfaz.Tablero.Casilla;
-import Cliente.Interfaz.Tablero.Figuras.Bucle.FiguraBucle;
+import Cliente.Interfaz.Tablero.Figuras.Figura;
+import Cliente.Interfaz.Tablero.Figuras.NoBucle.Rey;
 import Cliente.Interfaz.Tablero.Posicion;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 
 public class Torre extends FiguraBucle {
@@ -32,6 +31,8 @@ public class Torre extends FiguraBucle {
         hsPosiblesMovimientos = new HashSet<Posicion>();
         int fila = posicion.getFila();
         int columna = posicion.getColumna();
+        int fAux, cAux;
+        Figura figura;
         Posicion p;
         // variables para calcular movimientos
         boolean N = true;
@@ -41,40 +42,76 @@ public class Torre extends FiguraBucle {
         for (int i = 1; i < 8; i++) {
             // dirección norte
             if (N) {
-                p = new Posicion(fila + i, columna);
+                fAux = fila + i;
+                cAux = columna;
+                p = new Posicion(fAux, cAux);
                 N = comprobarBucle(hsPosiblesMovimientos, arrayTablero, p, N, detectarJaqueMate);
+                // determinamos que se respetan las dimensiones del tablero
+                if (!N && detectarJaqueMate && fAux < 7) {
+                    figura = arrayTablero[fAux][cAux].getFigura();
+                    fAux += 1;
+                    p = new Posicion(fAux, cAux);
+                    comprobarJaqueMateAux(figura, p, arrayTablero, hsPosiblesMovimientos);
+                }
             }
             if (S) {
                 // dirección sur
-                p = new Posicion(fila - i, columna);
+                fAux = fila - i;
+                cAux = columna;
+                p = new Posicion(fAux, cAux);
                 S = comprobarBucle(hsPosiblesMovimientos, arrayTablero, p, S, detectarJaqueMate);
+                // determinamos que se respetan las dimensiones del tablero
+                if (!S && detectarJaqueMate && fAux > 0) {
+                    figura = arrayTablero[fAux][cAux].getFigura();
+                    fAux -= 1;
+                    p = new Posicion(fAux, cAux);
+                    comprobarJaqueMateAux(figura, p, arrayTablero, hsPosiblesMovimientos);
+                }
             }
             // dirección oeste
             if (O) {
-                p = new Posicion(fila, columna - i);
+                fAux = fila;
+                cAux = columna - i;
+                p = new Posicion(fAux, cAux);
                 O = comprobarBucle(hsPosiblesMovimientos, arrayTablero, p, O, detectarJaqueMate);
+                // determinamos que se respetan las dimensiones del tablero
+                if (!O && detectarJaqueMate && cAux > 0) {
+                    figura = arrayTablero[fAux][cAux].getFigura();
+                    cAux -= 1;
+                    p = new Posicion(fAux, cAux);
+                    comprobarJaqueMateAux(figura, p, arrayTablero, hsPosiblesMovimientos);
+                }
             }
             if (E) {
                 // dirección este
-                p = new Posicion(fila, columna + i);
+                fAux = fila;
+                cAux = columna + i;
+                p = new Posicion(fAux, cAux);
                 E = comprobarBucle(hsPosiblesMovimientos, arrayTablero, p, E, detectarJaqueMate);
+                // determinamos que se respetan las dimensiones del tablero
+                if (!E && detectarJaqueMate && cAux < 7) {
+                    figura = arrayTablero[fAux][cAux].getFigura();
+                    cAux += 1;
+                    p = new Posicion(fAux, cAux);
+                    comprobarJaqueMateAux(figura, p, arrayTablero, hsPosiblesMovimientos);
+                }
             }
         }
-        
+
         return hsPosiblesMovimientos;
     }
 
+
     /**
      * Método que en virtud de la posición de la torre, nos ayuda a detectar cuál de sus rutas pone en jaque al rey.
+     *
      * @param pos
      * @param arrayTablero
      * @return un hashset con la ruta que sigue la torre
      */
     @Override
-    public HashSet<Posicion> detectarRutaJaque(Posicion pos, Casilla[][] arrayTablero) {
+    public HashSet<Posicion> detectarRutaJaque(Posicion pos, Posicion posRey, Casilla[][] arrayTablero) {
         HashSet<Posicion> hsRutaJaque = new HashSet<>();
-        // detectamos posición del rey rival
-        Posicion posRey = detectarPosicionReyRival(pos, arrayTablero);
         int fila = pos.getFila(), col = pos.getColumna();
         int filaAux = 0, colAux = 0;
         // establecemos parámetros para sacar la ruta
@@ -106,39 +143,5 @@ public class Torre extends FiguraBucle {
         }
 
         return hsRutaJaque;
-    }
-
-    @Override
-    public HashMap<Posicion, ArrayList<Casilla>> depurarRutaJaque(Casilla casillaTorre, Posicion posRey,
-                                                                  Casilla[][] arrayTablero,
-                                                                  HashMap<Posicion, ArrayList<Casilla>> hmJaqueMate) {
-        Posicion posicion = casillaTorre.getPosicion();
-        int filaTorre = posicion.getFila(), colTorre = posicion.getColumna();
-        int filaRey = posRey.getFila(), colRey = posRey.getColumna();
-        int colAux = 0, filaAux = 0;
-        if (filaRey == filaTorre) {
-            if (colRey > colTorre) {
-                colAux = 1;
-            } else {
-                colAux = -1;
-            }
-        } else if (colRey == colTorre) {
-            if (filaRey > filaTorre) {
-                filaAux = 1;
-            } else {
-                filaAux = -1;
-            }
-        }
-
-        // determinamos si es posible actualizar el hmJAqueMate, si entra dentro de las condiciones
-        if (filaRey + filaAux <= 7 && filaRey + filaAux >= 0 && colRey + colAux <= 7 && colRey + colAux >= 0) {
-            if (arrayTablero[filaRey + filaAux][colRey + colAux].getFigura() == null) { // está vacía
-                ArrayList<Casilla> arrayCasillas = new ArrayList<>();
-                arrayCasillas.add(casillaTorre);
-                // añadimos un nuevo registro a hmJaqueMate
-                hmJaqueMate.put(new Posicion(filaRey + filaAux, colRey + colAux), arrayCasillas);
-            }
-        }
-        return hmJaqueMate;
     }
 }

@@ -53,4 +53,8 @@ public class Casilla implements Serializable {
     public void descolorearBorde() {
         btnCasilla.setBorder(new LineBorder(Color.GRAY, 1));
     }
+
+    public void colorearSeleccion() {
+        btnCasilla.setBorder(new LineBorder(Color.GREEN, 4));
+    }
 }

@@ -33,7 +33,7 @@ public class HiloServidor implements Runnable {
                 try {
                     flujoEscritura.writeObject(j);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    // excepción que se controla en Run.java
                 }
             }
         }
@@ -48,7 +48,7 @@ public class HiloServidor implements Runnable {
         }
 
         // si salimos del bucle debemos cerrar conexión
-        Run.eliminarPartida(partida);
+        eliminarPartida();
     }
 
     /**
@@ -61,8 +61,15 @@ public class HiloServidor implements Runnable {
                 jugador.getFlujoEscritura().writeObject(mensaje);
                 jugador.getFlujoEscritura().flush();
             } catch (IOException e) {
-                e.printStackTrace();
+                eliminarPartida();
             }
         }
+    }
+
+    private void eliminarPartida() {
+        for (Jugador jugador : partida.getArrayJugadores()) {
+            jugador.cerrarConexion();
+        }
+        Run.eliminarPartida(partida);
     }
 }

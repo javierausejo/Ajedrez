@@ -1,6 +1,7 @@
 package Cliente.Interfaz.Tablero.Figuras.NoBucle;
 
 import Cliente.Interfaz.Tablero.Casilla;
+import Cliente.Interfaz.Tablero.Figuras.Figura;
 import Cliente.Interfaz.Tablero.Figuras.NoBucle.FiguraNoBucle;
 import Cliente.Interfaz.Tablero.Posicion;
 
@@ -11,6 +12,7 @@ public class Peon extends FiguraNoBucle {
     // VARIABLES DE INSTANCIA
     private HashSet<Posicion> hsPosiblesMovimientos;
     private boolean primerMovimiento;
+    private boolean comerAlPaso;
 
     public Peon(boolean local) {
         super("PEÓN", local);
@@ -23,6 +25,14 @@ public class Peon extends FiguraNoBucle {
 
     public void setPrimerMovimiento(boolean primerMovimiento) {
         this.primerMovimiento = primerMovimiento;
+    }
+
+    public boolean sePuedeComerAlPaso() {
+        return comerAlPaso;
+    }
+
+    public void setComerAlPaso(boolean comerAlPaso) {
+        this.comerAlPaso = comerAlPaso;
     }
 
     @Override
@@ -58,7 +68,7 @@ public class Peon extends FiguraNoBucle {
             }
         }
 
-        // comprobar si puede COMER
+        // comprobar si puede COMER de modo tradicional
         if (esMia()) {
             nFila = fila + 1;
         } else {
@@ -71,13 +81,14 @@ public class Peon extends FiguraNoBucle {
         p = new Posicion(nFila, nColumna);
         comprobarComer(p, arrayTablero, detectarJaqueMate);
 
+        // comprobar si puede COMER AL PASO
+        comprobarComerAlPaso(posicion, arrayTablero);
+
         return hsPosiblesMovimientos;
     }
 
     private void comprobarComer(Posicion posicion, Casilla[][] array, boolean detectarJaqueMate) {
-        // detectamos si la fila y la columna enviadas entran dentro del tablero
-        int fila = posicion.getFila();
-        int columna = posicion.getColumna();
+        int fila = posicion.getFila(), columna = posicion.getColumna();
         if (fila >= 0 && fila < 8 && columna >= 0 && columna < 8) {
             // detectamos si en dicha posición hay una figura y si es nuestra o no
             if (array[fila][columna].getFigura() != null) {
@@ -91,6 +102,33 @@ public class Peon extends FiguraNoBucle {
             } else {
                 if (detectarJaqueMate) {
                     hsPosiblesMovimientos.add(posicion);
+                }
+            }
+        }
+    }
+
+    /**
+     * Método que comprueba cuándo los peones pueden comer al paso.
+     * Si es así, se añade la posición correspondiente al HashSet de posibles movimientos.
+     */
+    private void comprobarComerAlPaso(Posicion posicion, Casilla[][] arrayTablero) {
+        int fila = posicion.getFila();
+        int columna = posicion.getColumna();
+        Peon pAux;
+        // comprobamos si las casillas correspondientes se pueden comer al paso
+        if (columna - 1 >= 0) {
+            if (arrayTablero[fila][columna - 1].getFigura() instanceof Peon) {
+                pAux = (Peon) arrayTablero[fila][columna - 1].getFigura();
+                if (pAux.sePuedeComerAlPaso()) {
+                    hsPosiblesMovimientos.add(new Posicion(fila + 1, columna - 1));
+                }
+            }
+        }
+        if (columna + 1 <= 7) {
+            if (arrayTablero[fila][columna + 1].getFigura() instanceof Peon) {
+                pAux = (Peon) arrayTablero[fila][columna + 1].getFigura();
+                if (pAux.sePuedeComerAlPaso()) {
+                    hsPosiblesMovimientos.add(new Posicion(fila + 1, columna + 1));
                 }
             }
         }

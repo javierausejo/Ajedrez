@@ -17,6 +17,20 @@ public abstract class Figura implements Serializable {
         this.mia = mia;
     }
 
+    /**
+     * Método abstracto que devuelve un hashset de instancias Posicion.java con los
+     * posibles movimientos que puede hacer una figura en una posición determinada
+     * del tablero.
+     *
+     * @param posicion     la posición actual de la figura
+     * @param arrayTablero el estado del tablero
+     * @param detectarJaqueMate si hay que detectar jaque mate o no el comportamiento cambia según figuras
+     * @return hashset de instancias Posicion.java
+     */
+    public abstract HashSet<Posicion> getPosiblesMovimientos(Posicion posicion,
+                                                             Casilla[][] arrayTablero,
+                                                             boolean detectarJaqueMate);
+
     public String getNom() {
         return nom;
     }
@@ -24,15 +38,4 @@ public abstract class Figura implements Serializable {
     public boolean esMia() {
         return mia;
     }
-
-    /**
-     * Método abstracto que devuelve un hashset de instancias Posicion.java con los posibles movimientos que puede
-     * hacer una figura en una posición determinada del tablero.
-     *
-     * @param posicion     la posición actual de la figura
-     * @param arrayTablero el estado del tablero
-     * @param detectarJaqueMate si hay que detectar jaque mate o no
-     * @return hashset de instancias Posicion.java
-     */
-    public abstract HashSet<Posicion> getPosiblesMovimientos(Posicion posicion, Casilla[][] arrayTablero, boolean detectarJaqueMate);
 }

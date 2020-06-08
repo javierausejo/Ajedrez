@@ -1,11 +1,11 @@
 package Cliente;
 
 import Clases.Jugador;
-import Clases.Mensaje.Mensaje;
-import Clases.Mensaje.MensajeChat;
-import Clases.Mensaje.MensajeMovimiento;
+import Clases.Mensaje.*;
 import Cliente.Interfaz.Interfaz;
 import Cliente.Interfaz.Tablero.Casilla;
+import Cliente.Interfaz.Tablero.Figuras.Figura;
+import Cliente.Interfaz.Tablero.Posicion;
 
 import javax.swing.*;
 import java.io.*;
@@ -52,7 +52,6 @@ public class HiloCliente implements Runnable {
             }
             interfaz.setModoPartida(jugador.isLocal());
             interfaz.setNicknames(jugador, (Jugador) flujoLectura.readObject());
-            Object o;
             Mensaje mensaje;
             while (!socket.isClosed()) {
                 try {
@@ -64,10 +63,10 @@ public class HiloCliente implements Runnable {
                         interfaz.procesarMensaje(mensaje, false);
                     }
                 }  catch (SocketException e) {
-                    // caso desconexión del cliente hacie el servidor
                     desconexion();
+                    String m = "Se ha desconectado de la partida.";
                     JOptionPane.showMessageDialog(interfaz,
-                            "Se ha desconectado con éxito.",
+                            m,
                             "Información",
                             JOptionPane.INFORMATION_MESSAGE);
                 } catch (EOFException ex) {
@@ -107,12 +106,12 @@ public class HiloCliente implements Runnable {
      */
     public void desconexion() {
         try {
+            interfaz.setModoInicio();
             socket.close();
             flujoLectura.close();
             flujoEscritura.close();
-            interfaz.setModoInicio();
         } catch (IOException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
     }
 
@@ -126,18 +125,42 @@ public class HiloCliente implements Runnable {
             flujoEscritura.writeObject(mensaje);
             flujoEscritura.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            desconexion();
         }
     }
 
-    public void  enviarMovimiento(Casilla casillaOrigen, Casilla casillaDestino, boolean seCome) {
+    public void enviarMovimiento(Casilla casillaOrigen, Casilla casillaDestino, boolean seCome) {
         try {
             Mensaje mensaje = new MensajeMovimiento(jugador, casillaOrigen, casillaDestino, seCome);
             flujoEscritura.writeObject(mensaje);
             flujoEscritura.flush();
             flujoEscritura.reset(); // reseteamos flujo de escritura a estado inicial, de lo contrario no transmite bien la figura de las casillas (SALTA NULLPOINTEREXCEPTION)
         } catch (IOException e) {
-            e.printStackTrace();
+            desconexion();
+        }
+    }
+
+    public void enviarMensajePromocion(Figura figuraPromocion, Posicion posDestino) {
+        try {
+            Mensaje mensaje = new MensajePromocion(jugador, figuraPromocion, posDestino);
+            flujoEscritura.writeObject(mensaje);
+            flujoEscritura.flush();
+        } catch (IOException e) {
+            desconexion();
+        }
+    }
+
+    /**
+     *
+     * @param tablas
+     */
+    public void enviarMensajeEmpate(boolean tablas, boolean inicioSolicitud) {
+        try {
+            Mensaje mensaje = new MensajeEmpate(jugador, tablas, inicioSolicitud);
+            flujoEscritura.writeObject(mensaje);
+            flujoEscritura.flush();
+        } catch (IOException e) {
+            desconexion();
         }
     }
 }

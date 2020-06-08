@@ -12,8 +12,6 @@ public abstract class FiguraNoBucle extends Figura {
         super(nom, mia);
     }
 
-    public abstract HashSet<Posicion> getPosiblesMovimientos(Posicion posicion, Casilla[][] arrayTablero, boolean detectarJaqueMate);
-
     /**
      * Método para comprobar si es posible un movimiento en piezas cuya lógica
      * de movimiento NO responde a bucles: caballo, rey y peón.
@@ -22,7 +20,8 @@ public abstract class FiguraNoBucle extends Figura {
      * @param hsPosiblesMovimientos indica los posibles movimientos de la figura.
      * @param posicion              posición a comprobar si se puede añadir
      */
-    public void comprobar(HashSet<Posicion> hsPosiblesMovimientos, Casilla[][] array, Posicion posicion, boolean detectarJaqueMate) {
+    public void comprobar(HashSet<Posicion> hsPosiblesMovimientos,
+                          Casilla[][] array, Posicion posicion, boolean detectarJaqueMate) {
         // detectamos si la fila y la columna enviadas entran dentro del tablero
         int fila = posicion.getFila();
         int columna = posicion.getColumna();

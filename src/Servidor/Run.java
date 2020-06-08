@@ -124,10 +124,6 @@ public class Run {
     }
 
     public static void eliminarPartida(Partida partida) {
-        // desconectamos a los clientes de la partida en cuestión
-        for (Jugador jug : partida.getArrayJugadores()) {
-            jug.cerrarConexion();
-        }
         // eliminamos la partida del array
         arrayPartidas.remove(partida);
     }

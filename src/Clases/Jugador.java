@@ -77,7 +77,7 @@ public class Jugador implements Serializable {
             flujoLectura.close();
             socket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
     }
 }
