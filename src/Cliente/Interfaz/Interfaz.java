@@ -4,6 +4,7 @@ import Clases.Jugador;
 import Clases.Mensaje.*;
 import Cliente.HiloCliente;
 import Cliente.HiloCronometro;
+import Cliente.Interfaz.Sonidos.Sonidos;
 import Cliente.Interfaz.Tablero.Casilla;
 import Cliente.Interfaz.Tablero.Figuras.Bucle.Alfil;
 import Cliente.Interfaz.Tablero.Figuras.Bucle.Reina;
@@ -14,6 +15,8 @@ import Cliente.Interfaz.Tablero.Figuras.NoBucle.Peon;
 import Cliente.Interfaz.Tablero.Figuras.NoBucle.Rey;
 import Cliente.Interfaz.Tablero.Posicion;
 import Cliente.Interfaz.Tablero.Tablero;
+import jdk.nashorn.internal.scripts.JO;
+import sun.invoke.empty.Empty;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -23,6 +26,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
 
 import static Cliente.Interfaz.Tablero.Tablero.DIM_BOTON_TABLERO;
 import static Cliente.Interfaz.Tablero.Tablero.DIM_TABLERO;
@@ -60,11 +64,13 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
     private Tablero pnlTablero;
     private Casilla[][] arrayTablero;
     private JScrollPane scpRegistro;
+    private JList jlist;
     private DefaultListModel modelo;
     private JTextPane txpChat;
     private StyledDocument doc;
     private HiloCliente hiloCliente;
     private HiloCronometro hiloCronometro;
+    private Sonidos sonidos;
 
     /**
      * Método que inicializa la interfaz de usuario.
@@ -88,6 +94,9 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         // añadimos icono
         ImageIcon icon = new ImageIcon(ICONO);
         setIconImage(icon.getImage());
+
+        // inicializamos sonido y respuestaEmpate a false
+        sonidos = new Sonidos();
 
         setContentPane(pnlContenedor);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -250,9 +259,37 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
 
         // creamos un scrollpane con jlist que refleje los movimientos de la partida
         // se añade al centro de pnlRegistro
-        JList jlist = new JList();
         modelo = new DefaultListModel();
-        jlist.setModel(modelo);
+        jlist = new JList(modelo);
+        // hacemos que pinte las celdas en función del jugador que envíe el mensaje
+        jlist.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                // como cada vez que añade un mensaje se recorre todo el jlist
+                // nos apoyamos en los prefijos para ver quién lo manda
+                label.setHorizontalAlignment(0);
+                if (label.getText().startsWith("USTED >>>")) {
+                    if (label.getText().endsWith("JAQUE.")) {
+                        label.setBackground(new Color(187, 255, 119));
+                        label.setForeground(Color.DARK_GRAY);
+                    } else {
+                        label.setBackground(new Color(223, 223, 223));
+                        label.setForeground(Color.DARK_GRAY);
+                    }
+                } else {
+                    if (label.getText().endsWith("JAQUE.")) {
+                        label.setBackground(new Color(255, 132, 132));
+                        label.setForeground(Color.DARK_GRAY);
+                    } else {
+                        label.setBackground(Color.WHITE);
+                        label.setForeground(Color.BLACK);
+                    }
+                }
+
+                return label;
+            }
+        });
         // añadimos scrollpane al jlist
         scpRegistro = new JScrollPane(jlist);
 
@@ -302,35 +339,6 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         for (JComponent elemento : elementos) {
             panel.add(elemento);
         }
-    }
-
-    /**
-     * Método que devuelve el nickname autoasignado por el cliente.
-     */
-    public String getNickname() {
-        return txtUsuario.getText().trim();
-    }
-
-    /**
-     * Método que recibe 2 instancias de jugadores y actualiza la interfaz
-     * acorde a sus parámetros.
-     */
-    public void setNicknames(Jugador jugador1, Jugador jugador2) {
-        lblUsuario1.setText(jugador1.getNickName());
-        lblUsuario2.setText(jugador2.getNickName());
-    }
-
-    public void setTiempoTurno(boolean esMiTurno, String tiempoRestante) {
-        if (esMiTurno) {
-            lblTiempo1.setText(tiempoRestante + " \"");
-        } else {
-            lblTiempo2.setText(tiempoRestante + " \"");
-        }
-    }
-
-    public void reiniciarTiempos() {
-        lblTiempo1.setText(TIEMPO);
-        lblTiempo2.setText(TIEMPO);
     }
 
     /**
@@ -430,26 +438,42 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
     }
 
     /**
-     * Método que sirve para desconectar al usuario del servidor.
-     * Se invoca cuando se pulsa btnDesconectar, o cuando el timeOut de movimiento llega a 0.
+     * Método que devuelve el nickname autoasignado por el cliente.
      */
-    public void desconectar() {
-        if (hiloCronometro != null)
-            hiloCronometro.apagarCronometro();
-        hiloCliente.desconexion();
+    public String getNickname() {
+        return txtUsuario.getText().trim();
     }
 
     /**
-     * Método que añade los listeners necesarios a los elementos de la interfaz.
-     * Se le llama desde el propio constructor.
+     * Método que recibe 2 instancias de jugadores y actualiza la interfaz
+     * acorde a sus parámetros.
      */
-    private void addListeners() {
-        btnConectar.addActionListener(this);
-        btnDesconectar.addActionListener(this);
-        btnEmpate.addActionListener(this);
-        txtMensaje.addKeyListener(this);
+    public void setNicknames(Jugador jugador1, Jugador jugador2) {
+        lblUsuario1.setText(jugador1.getNickName());
+        lblUsuario2.setText(jugador2.getNickName());
     }
 
+    public void setTiempoTurno(boolean esMiTurno, String tiempoRestante) {
+        Color color = Color.BLACK;
+        if (Integer.parseInt(tiempoRestante) <= 10) {
+            color = Color.RED;
+        }
+
+        if (esMiTurno) {
+            lblTiempo1.setText(tiempoRestante + " \"");
+            lblTiempo1.setForeground(color);
+        } else {
+            lblTiempo2.setText(tiempoRestante + " \"");
+            lblTiempo2.setForeground(color);
+        }
+    }
+
+    public void reiniciarTiempos() {
+        lblTiempo1.setText(TIEMPO);
+        lblTiempo1.setForeground(Color.BLACK);
+        lblTiempo2.setText(TIEMPO);
+        lblTiempo2.setForeground(Color.BLACK);
+    }
 
     /**
      * Método invocado desde HiloCliente.java para que la interfaz interprete los mensajes
@@ -463,7 +487,7 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         if (enviadoPorMi) {
             jug = "USTED";
         } else {
-            jug = mensaje.getJugador().getNickName().toUpperCase();
+            jug = mensaje.getJugador().getNickName().toUpperCase().substring(0, 3);
         }
 
         if (mensaje instanceof MensajeChat) {
@@ -512,6 +536,7 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                     posDestino = new Posicion(7 - posDestino.getFila(), 7 - posDestino.getColumna());
                 }
 
+                String mensajeJList;
                 if (!m.getSeCome()) {
                     // distinguimos caso enroque rey-torre
                     if (figuraOrigen instanceof Rey && (Math.abs(posOrigen.getColumna() - posDestino.getColumna()) == 2)) {
@@ -549,16 +574,17 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
 
                         // movemos figuras y actualizamos jlist
                         if (enroque) {
-                            modelo.addElement(jug + " >>> Ejecuta ENROQUE LARGO.");
+                            mensajeJList = jug + " >>> Ejecuta ENROQUE LARGO.";
                         } else {
-                            modelo.addElement(jug + " >>> Ejecuta ENROQUE CORTO.");
+                            mensajeJList = jug + " >>> Ejecuta ENROQUE CORTO.";
                         }
                         pnlTablero.moverFigura(pOrigenTorre, pDestinoTorre);
                     } else {
-                        modelo.addElement(jug + " >>> Mueve " + figuraOrigen.getNom() + " de " + valoresColumna.charAt(posOrigen.getColumna()) + " - "
-                                + filaOrigenAux + " a " + valoresColumna.charAt(posDestino.getColumna()) + " - "
-                                + filaDestinoAux + ".");
+                        mensajeJList = jug + " >>> Mueve " + figuraOrigen.getNom() + " de " + valoresColumna.charAt(posOrigen.getColumna())
+                                + filaOrigenAux + " a " + valoresColumna.charAt(posDestino.getColumna())
+                                + filaDestinoAux + ".";
                     }
+                    modelo.addElement(mensajeJList);
                 } else {
                     Figura figuraAComer = m.getCasillaDestino().getFigura();
                     if (figuraAComer == null) { // salta cuando peón come el paso
@@ -573,15 +599,19 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                         casillaAux.getBtnCasilla().setIcon(null);
                         casillaAux.setFigura(null);
                     }
-                    modelo.addElement(jug + " >>> Mueve " + figuraOrigen.getNom() + " de " + valoresColumna.charAt(posOrigen.getColumna()) + " - "
-                            + filaOrigenAux + " a " + valoresColumna.charAt(posDestino.getColumna()) + " - "
-                            + filaDestinoAux + ".");
-                    modelo.addElement(jug + " >>> Come " + figuraAComer.getNom() + " rival.");
+                    mensajeJList = jug + " >>> Mueve " + figuraOrigen.getNom() + " de " + valoresColumna.charAt(posOrigen.getColumna())
+                            + filaOrigenAux + " a " + valoresColumna.charAt(posDestino.getColumna())
+                            + filaDestinoAux + ".";
+                    modelo.addElement(mensajeJList);
+
+                    mensajeJList = jug + " >>> Come " + figuraAComer.getNom() + " rival.";
+                    modelo.addElement(mensajeJList);
 
                     // caso de comer rey
                     if (figuraAComer instanceof Rey) {
                         // movemos la figura en el tablero
                         pnlTablero.moverFigura(posOrigen, posDestino);
+                        sonidos.reproducirMovFigura();
                         if (enviadoPorMi) {
                             JOptionPane.showMessageDialog(this,
                                     "¡Enhorabuena! Has ganado.",
@@ -630,15 +660,17 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
             if (m.iniciaSolicitud()) {
                 hiloCronometro.pausar(); // paramos crono
                 if (!enviadoPorMi) {// si no está enviada por mí, nace ese menú
-                    modelo.addElement(jug + " >>> Recibe solicitud de EMPATE.");
+                    sonidos.reproducirSolicitudEmpate();
                     aceptarEmpate();
-                } else {
-                    modelo.addElement(jug + " >>> Emite solicitud de EMPATE.");
                 }
             } else {
+                synchronized (this) {
+                    notify(); // avisamos de que la interfaz ya puede volver a funcionar de manera normal
+                }
                 // si se recibe un mensaje en el que se acepta la rendición
                 if (m.aceptaTablas()) {
                     hiloCronometro.apagarCronometro();
+                    sonidos.reproducirFin();
                     JOptionPane.showMessageDialog(this,
                             "Empate por mutuo acuerdo.",
                             "Empate",
@@ -646,11 +678,20 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                     desconectar();
                 } else {
                     hiloCronometro.resume();
-                    modelo.addElement(jug + " >>> Solicitud de empate RECHAZADA.");
                 }
             }
         }
 
+    }
+
+    /**
+     * Método que sirve para desconectar al usuario del servidor.
+     * Se invoca cuando se pulsa btnDesconectar, o cuando el timeOut de movimiento llega a 0.
+     */
+    public void desconectar() {
+        if (hiloCronometro != null)
+            hiloCronometro.apagarCronometro();
+        hiloCliente.desconexion();
     }
 
     /**
@@ -663,11 +704,16 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
     private void comprobarMovimiento(String jug, Posicion posicion) {
         // comprobamos si hay jaque
         Posicion jaque = pnlTablero.comprobarJaque(arrayTablero[posicion.getFila()][posicion.getColumna()]);
+        String mensaje;
         if (jaque != null) { // significa que hay jaque y puede haber jaque mate
             boolean jaqueMate = pnlTablero.comprobarFinPartida(jaque, true);
-            if (jaqueMate) {
+            if (!jaqueMate) {
+                sonidos.reproducirJaque();
+                mensaje = jug + " >>> Aviso de JAQUE.";
+                modelo.addElement(mensaje);
+            } else {
                 hiloCronometro.apagarCronometro();
-                String mensaje = null;
+                sonidos.reproducirFin();
                 String titulo = null;
                 if (pnlTablero.esMiTurno()) {
                     mensaje = "¡Jaque Mate! Has ganado.";
@@ -682,14 +728,13 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                         JOptionPane.INFORMATION_MESSAGE);
                 desconectar();
                 return;
-            } else {
-                modelo.addElement(jug + " >>> Aviso de JAQUE.");
             }
         } else { // significa que puede haber AHOGADO
             boolean ahogado = pnlTablero.comprobarAhogado();
             if (ahogado) {
+                sonidos.reproducirFin();
                 hiloCronometro.apagarCronometro();
-                String mensaje = "¡Ahogado! Habéis quedado empate.";
+                mensaje = "¡Ahogado! Habéis quedado empate.";
                 String titulo = "Empate";
                 JOptionPane.showMessageDialog(this,
                         mensaje,
@@ -697,8 +742,15 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                         JOptionPane.INFORMATION_MESSAGE);
                 desconectar();
                 return;
+            } else {
+                sonidos.reproducirMovFigura();
             }
         }
+
+        // desplazamos jlist hasta abajo
+        SwingUtilities.invokeLater(() -> scpRegistro.getVerticalScrollBar().setValue(scpRegistro.getVerticalScrollBar().getMaximum()));
+        jlist.ensureIndexIsVisible(modelo.getSize()); // refresca jlist para que no se quede en blanco siempre que se asigne modelo en
+        // constructor --> jlist = new JList(modelo);
 
         // cambiamos turno, actualizamos btnEmpate
         pnlTablero.cambiarTurno();
@@ -706,10 +758,6 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
             btnEmpate.setEnabled(true);
         else
             btnEmpate.setEnabled(false);
-
-        // desplacamos jlist hasta abajo
-        SwingUtilities.invokeLater(() -> scpRegistro.getVerticalScrollBar().setValue(scpRegistro.getVerticalScrollBar().getMaximum()));
-
 
         // acabamos con el actual hiloCronometro e iniciamos uno nuevoo para el rival
         hiloCronometro.apagarCronometro();
@@ -758,7 +806,7 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         String[] posibilidades = {"No", "Sí"};
         Boolean empate = null;
         while (empate == null) {
-            int opcion = JOptionPane.showOptionDialog(this, "¿Acepta el empate?", "Tablas",
+            int opcion = JOptionPane.showOptionDialog(this, lblUsuario2.getText() + " le propone el empate.\n¿Desea aceptarlo?", "Tablas",
                     JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, posibilidades, posibilidades[0]);
             switch (opcion) {
                 case 0:
@@ -780,6 +828,17 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         hiloCliente.enviarMensajeEmpate(empate, inicioSolicitud);
     }
 
+    /**
+     * Método que añade los listeners necesarios a los elementos de la interfaz.
+     * Se le llama desde el propio constructor.
+     */
+    private void addListeners() {
+        btnConectar.addActionListener(this);
+        btnDesconectar.addActionListener(this);
+        btnEmpate.addActionListener(this);
+        txtMensaje.addKeyListener(this);
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         // Si pulsamos sobre el btnConectar, iniciamos hilo cliente
@@ -790,9 +849,9 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                         "Indique un nickname.",
                         "Error",
                         JOptionPane.ERROR_MESSAGE);
-            } else if (getNickname().length() > 15) {
+            } else if (getNickname().length() > 9 || getNickname().length() < 3) {
                 JOptionPane.showMessageDialog(this,
-                        "El nickname puede contener hasta un máximo de 15 carácteres.",
+                        "El nickname debe contener entre 3 y 9 carácteres.",
                         "Error",
                         JOptionPane.ERROR_MESSAGE);
             } else {
@@ -810,8 +869,26 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
 
         // Si pulsamos sobre btnEmpate, proponemos tablas
         if (e.getSource().equals(btnEmpate)) {
+            // enviamos mensaje de empate y deshabilitamos btnEmpate
             enviarMensajeEmpate(true, true);
             btnEmpate.setEnabled(false);
+            // creamos un jdialog que informe de que estamos a la espera
+            JDialog jDialog = new JDialog(this);
+            jDialog.setTitle("Tablas");
+            JLabel lbl = new JLabel("Esperando respuesta de solicitud de empate.");
+            lbl.setBorder(new EmptyBorder(ESPACIO, ESPACIO, ESPACIO, ESPACIO));
+            jDialog.add(lbl);
+            jDialog.setVisible(true);
+            jDialog.setResizable(false);
+            jDialog.pack();
+            jDialog.setLocationRelativeTo(this);
+            // hacemos esperar al programa
+            synchronized (this) {
+                try {
+                    wait(); // esperamos hasta que se invoque a notify al recibir un mensajeempate
+                } catch (InterruptedException ex) { }
+            }
+            jDialog.dispose(); // cerramos jdialog a la orden del notify
         }
     }
 

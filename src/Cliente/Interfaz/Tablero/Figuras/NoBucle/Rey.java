@@ -70,24 +70,29 @@ public class Rey extends FiguraNoBucle {
      * Método que comprueba si es posible ejecutar un movimiento de enroque corto, añadiéndolo así al HashSet de
      * posibles movimientos.
      */
-    public void comprobarEnroqueCorto(Casilla casillaRey, Casilla[][] arrayTablero, boolean local) {
+    public void comprobarEnroqueCorto(Casilla[][] arrayTablero, boolean local) {
         boolean enroqueCorto = false;
-        int colAux1, colAux2;
+        int colAux, colAux1, colAux2;
+        int colRey;
         Figura fAux, fAux1, fAux2;
 
         if (esPrimerMovimiento()) {
             if (local) {
-                fAux = arrayTablero[0][7].getFigura();
+                colAux = 7;
+                fAux = arrayTablero[0][colAux].getFigura();
                 colAux1 = 6;
                 fAux1 = arrayTablero[0][colAux1].getFigura();
                 colAux2 = 5;
                 fAux2 = arrayTablero[0][colAux2].getFigura();
+                colRey = 4;
             } else {
-                fAux = arrayTablero[0][0].getFigura();
+                colAux = 0;
+                fAux = arrayTablero[0][colAux].getFigura();
                 colAux1 = 1;
                 fAux1 = arrayTablero[0][colAux1].getFigura();
                 colAux2 = 2;
                 fAux2 = arrayTablero[0][colAux2].getFigura();
+                colRey = 3;
             }
 
             if (fAux != null && fAux instanceof Torre) {
@@ -109,10 +114,11 @@ public class Rey extends FiguraNoBucle {
                             if (c.getFigura() != null && c.getFigura().esMia() != esMia()) {
                                 hsAux = c.getFigura().getPosiblesMovimientos(new Posicion(i, j), arrayTablero, false);
                                 for (Posicion p : hsAux) {
-                                    if ((p.getFila() == 0 && p.getColumna() == colAux1)
+                                    if ((p.getFila() == 0 && p.getColumna() == colAux)
+                                            || (p.getFila() == 0 && p.getColumna() == colAux1)
                                             || (p.getFila() == 0 && p.getColumna() == colAux2)
-                                            || (p.getFila() == casillaRey.getPosicion().getFila()
-                                            && p.getColumna() == casillaRey.getPosicion().getColumna())) {
+                                            || (p.getFila() == 0 && p.getColumna() == colRey)
+                                    ) {
                                         enroqueCorto = false;
                                         break;
                                     }
@@ -138,28 +144,32 @@ public class Rey extends FiguraNoBucle {
      * Método que comprueba si es posible ejecutar un movimiento de enroque largo, añadiéndolo así al HashSet de
      * posibles movimientos.
      */
-    public void comprobarEnroqueLargo(Casilla casillaRey, Casilla[][] arrayTablero, boolean local) {
+    public void comprobarEnroqueLargo(Casilla[][] arrayTablero, boolean local) {
         HashSet<Posicion> hsAux;
         boolean enroqueLargo = false;
-        int colAux1, colAux2;
+        int colAux, colAux1, colAux2, colAux3;
+        int colRey;
         Figura fAux, fAux1, fAux2, fAux3;
 
         if (esPrimerMovimiento()) {
             if (local) {
-                fAux = arrayTablero[0][0].getFigura();
-                colAux1 = 2;
-                fAux1 = arrayTablero[0][colAux1].getFigura();
-                colAux2 = 3;
-                fAux2 = arrayTablero[0][colAux2].getFigura();
-                fAux3 = arrayTablero[0][1].getFigura();
+                colAux = 0;
+                colAux1 = 1;
+                colAux2 = 2;
+                colAux3 = 3;
+                colRey = 4;
             } else {
-                fAux = arrayTablero[0][7].getFigura();
-                colAux1 = 5;
-                fAux1 = arrayTablero[0][colAux1].getFigura();
-                colAux2 = 4;
-                fAux2 = arrayTablero[0][colAux2].getFigura();
-                fAux3 = arrayTablero[0][6].getFigura();
+                colAux = 7;
+                colAux1 = 6;
+                colAux2 = 5;
+                colAux3 = 4;
+                colRey = 3;
             }
+            fAux = arrayTablero[0][colAux].getFigura();
+            fAux1 = arrayTablero[0][colAux1].getFigura();
+            fAux2 = arrayTablero[0][colAux2].getFigura();
+            fAux3 = arrayTablero[0][colAux3].getFigura();
+
             if (fAux != null && fAux instanceof Torre) {
                 Torre torre = (Torre) fAux;
                 if (torre.esPrimerMovimiento()
@@ -179,10 +189,12 @@ public class Rey extends FiguraNoBucle {
                             if (c.getFigura() != null && c.getFigura().esMia() != esMia()) {
                                 hsAux = c.getFigura().getPosiblesMovimientos(new Posicion(i, j), arrayTablero, false);
                                 for (Posicion p : hsAux) {
-                                    if ((p.getFila() == 0 && p.getColumna() == colAux1)
+                                    if ((p.getFila() == 0 && p.getColumna() == colAux)
+                                            || (p.getFila() == 0 && p.getColumna() == colAux1)
                                             || (p.getFila() == 0 && p.getColumna() == colAux2)
-                                            || (p.getFila() == casillaRey.getPosicion().getFila()
-                                            && p.getColumna() == casillaRey.getPosicion().getColumna())) {
+                                            || (p.getFila() == 0 && p.getColumna() == colAux3)
+                                            || (p.getFila() == 0 && p.getColumna() == colRey)
+                                    ) {
                                         enroqueLargo = false;
                                         break;
                                     }
@@ -198,7 +210,7 @@ public class Rey extends FiguraNoBucle {
             }
             // añadimos las posiciones correspondientes al HashSet
             if (enroqueLargo) {
-                hsPosiblesMovimientos.add(arrayTablero[0][colAux1].getPosicion());
+                hsPosiblesMovimientos.add(arrayTablero[0][colAux2].getPosicion());
             }
         }
     }

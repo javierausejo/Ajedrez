@@ -1,8 +1,6 @@
 package Cliente.Interfaz.Tablero.Figuras.NoBucle;
 
 import Cliente.Interfaz.Tablero.Casilla;
-import Cliente.Interfaz.Tablero.Figuras.Figura;
-import Cliente.Interfaz.Tablero.Figuras.NoBucle.FiguraNoBucle;
 import Cliente.Interfaz.Tablero.Posicion;
 
 import java.util.HashSet;
@@ -119,7 +117,7 @@ public class Peon extends FiguraNoBucle {
         if (columna - 1 >= 0) {
             if (arrayTablero[fila][columna - 1].getFigura() instanceof Peon) {
                 pAux = (Peon) arrayTablero[fila][columna - 1].getFigura();
-                if (pAux.sePuedeComerAlPaso()) {
+                if (pAux.sePuedeComerAlPaso() && pAux.esMia() != esMia()) {
                     hsPosiblesMovimientos.add(new Posicion(fila + 1, columna - 1));
                 }
             }
@@ -127,7 +125,7 @@ public class Peon extends FiguraNoBucle {
         if (columna + 1 <= 7) {
             if (arrayTablero[fila][columna + 1].getFigura() instanceof Peon) {
                 pAux = (Peon) arrayTablero[fila][columna + 1].getFigura();
-                if (pAux.sePuedeComerAlPaso()) {
+                if (pAux.sePuedeComerAlPaso() && pAux.esMia() != esMia()) {
                     hsPosiblesMovimientos.add(new Posicion(fila + 1, columna + 1));
                 }
             }

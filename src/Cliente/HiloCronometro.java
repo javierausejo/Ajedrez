@@ -5,7 +5,7 @@ import Cliente.Interfaz.Interfaz;
 public class HiloCronometro implements Runnable {
 
     // CONSTANTES DE CLASE
-    private final static int TIEMPO_TURNO = 30;
+    private final static int TIEMPO_TURNO = 60;
 
     // VARIABLES DE INSTANCIA
     private Interfaz interfaz;

@@ -316,8 +316,8 @@ public class Tablero extends JPanel implements ActionListener {
                 hsPosiblesMovimientos = figura.getPosiblesMovimientos(new Posicion(fila, col), arrayTablero, false);
                 // comprobamos si es posible enroque en caso de clicar sobre rey
                 if (figura instanceof Rey) {
-                    ((Rey) figura).comprobarEnroqueCorto(casilla, arrayTablero, local);
-                    ((Rey) figura).comprobarEnroqueLargo(casilla, arrayTablero, local);
+                    ((Rey) figura).comprobarEnroqueCorto(arrayTablero, local);
+                    ((Rey) figura).comprobarEnroqueLargo(arrayTablero, local);
                 }
 //                if (figura instanceof Peon)
 //                    ((Peon) figura).comprobarComerAlPaso(casilla.getPosicion(), arrayTablero);
