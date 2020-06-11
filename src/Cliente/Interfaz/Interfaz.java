@@ -15,18 +15,14 @@ import Cliente.Interfaz.Tablero.Figuras.NoBucle.Peon;
 import Cliente.Interfaz.Tablero.Figuras.NoBucle.Rey;
 import Cliente.Interfaz.Tablero.Posicion;
 import Cliente.Interfaz.Tablero.Tablero;
-import jdk.nashorn.internal.scripts.JO;
-import sun.invoke.empty.Empty;
 
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.ArrayList;
 
 import static Cliente.Interfaz.Tablero.Tablero.DIM_BOTON_TABLERO;
 import static Cliente.Interfaz.Tablero.Tablero.DIM_TABLERO;
@@ -55,6 +51,14 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
     private final static String TIEMPO = " - \"";
     private final static String EMPATE = " ¿TABLAS?";
     private final static int ANCHO_CHAT = 25;
+    private final static Color FONDO_JAQUE_LOCAL = new Color(159, 255, 159);
+    private final static Color FONDO_JAQUE_VISITANTE = new Color(255, 132, 132);
+    private final static Color LETRA_JAQUE = Color.DARK_GRAY;
+    private final static Color FONDO_LOCAL = new Color(223, 223, 223);
+    private final static Color LETRA_LOCAL = Color.DARK_GRAY;
+    private final static Color FONDO_VISITANTE = Color.WHITE;
+    private final static Color LETRA_VISITANTE = Color.BLACK;
+
 
     // VARIABLES DE INSTANCIA
     private JPanel pnlContenedor;
@@ -63,11 +67,11 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
     private JLabel lblUsuario1, lblUsuario2, lblTiempo1, lblTiempo2;
     private Tablero pnlTablero;
     private Casilla[][] arrayTablero;
-    private JScrollPane scpRegistro;
+    private JScrollPane scpRegistro, scpChat;
     private JList jlist;
     private DefaultListModel modelo;
-    private JTextPane txpChat;
-    private StyledDocument doc;
+    private JEditorPane edpChat;
+    private String cadenaChat;
     private HiloCliente hiloCliente;
     private HiloCronometro hiloCronometro;
     private Sonidos sonidos;
@@ -271,19 +275,19 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                 label.setHorizontalAlignment(0);
                 if (label.getText().startsWith("USTED >>>")) {
                     if (label.getText().endsWith("JAQUE.")) {
-                        label.setBackground(new Color(187, 255, 119));
-                        label.setForeground(Color.DARK_GRAY);
+                        label.setBackground(FONDO_JAQUE_LOCAL);
+                        label.setForeground(LETRA_JAQUE);
                     } else {
-                        label.setBackground(new Color(223, 223, 223));
-                        label.setForeground(Color.DARK_GRAY);
+                        label.setBackground(FONDO_LOCAL);
+                        label.setForeground(LETRA_LOCAL);
                     }
                 } else {
                     if (label.getText().endsWith("JAQUE.")) {
-                        label.setBackground(new Color(255, 132, 132));
-                        label.setForeground(Color.DARK_GRAY);
+                        label.setBackground(FONDO_JAQUE_VISITANTE);
+                        label.setForeground(LETRA_JAQUE);
                     } else {
-                        label.setBackground(Color.WHITE);
-                        label.setForeground(Color.BLACK);
+                        label.setBackground(FONDO_VISITANTE);
+                        label.setForeground(LETRA_VISITANTE);
                     }
                 }
 
@@ -292,6 +296,7 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         });
         // añadimos scrollpane al jlist
         scpRegistro = new JScrollPane(jlist);
+        scpRegistro.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         // añadimos elementos a pnlRegistro
         pnlRegistro.add(scpRegistro);
@@ -310,13 +315,12 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         JPanel pnlChat = new JPanel(new BorderLayout());
         pnlChat.setBorder(new EmptyBorder(ESPACIO, 0, 0, 0));
 
-        // creamos jtextpane con su hoja de estilos doc
-        txpChat = new JTextPane();
-        txpChat.setEditable(false);
-        doc = txpChat.getStyledDocument();
+        // creamos JEditorPane en clave html
+        edpChat = new JEditorPane("text/html", "");
+        edpChat.setEditable(false);
 
-        JScrollPane scpChat = new JScrollPane(txpChat);
-        scpChat.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scpChat = new JScrollPane(edpChat);
+        scpChat.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         scpChat.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         pnlChat.add(scpChat, BorderLayout.CENTER);
 
@@ -355,11 +359,12 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
         pnlTablero.limpiarTablero();
         arrayTablero = pnlTablero.getArrayTablero();
 
-        // limpiamos txaChat y el modelo del registro de movimientos
-        txpChat.setText("");
+        // limpiamos edpChat y el modelo del registro de movimientos
+        cadenaChat = "";
+        edpChat.setText("<div>");
         modelo.clear();
 
-        txpChat.setEnabled(false);
+        edpChat.setEnabled(false);
         txtUsuario.setEnabled(true);
         btnConectar.setEnabled(true);
         btnDesconectar.setEnabled(false);
@@ -418,11 +423,11 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                 arrayTablero[i][j].getBtnCasilla().setEnabled(true);
             }
         }
-        txpChat.setEnabled(true);
+        edpChat.setEnabled(true);
         txtMensaje.setEnabled(true);
 
         // cambiamos color y mensaje del txtEstado
-        txtEstado.setBackground(Color.GREEN);
+        txtEstado.setBackground(new Color(55, 255, 55));
         txtEstado.setText(ESTADO_CON);
 
         // btnEmpate
@@ -492,31 +497,62 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
 
         if (mensaje instanceof MensajeChat) {
             MensajeChat m = (MensajeChat) mensaje;
-            SimpleAttributeSet izquierda = new SimpleAttributeSet();
-            StyleConstants.setAlignment(izquierda, StyleConstants.ALIGN_LEFT);
-            StyleConstants.setForeground(izquierda, Color.BLACK);
-
-            SimpleAttributeSet dcha = new SimpleAttributeSet();
-            StyleConstants.setAlignment(dcha, StyleConstants.ALIGN_RIGHT);
-            StyleConstants.setForeground(dcha, Color.BLUE);
-
-            try {
-                String txt = m.getTxt();
-                if (!txpChat.getText().isEmpty()) {
-                    txt = "\n\n" + txt;
-                }
-                if (enviadoPorMi) {
-                    doc.insertString(doc.getLength(), txt, izquierda);
-                    doc.setParagraphAttributes(doc.getLength(), 1, izquierda, false);
+            String cadena = m.getTxt(), cadAux;
+            String cad[];
+            //damos formato a cadena de texto para cortar palabras largas
+            cad = cadena.split(" ");
+            cadena = ""; // limpiamos cadena
+            for (int i = 0; i < cad.length; i++) {
+                cadAux = "";
+                if (cad[i].length() > 13) {
+                    for (int j = 0; j < cad[i].length(); j++) {
+                        cadAux = cadAux + cad[i].charAt(j);
+                        if (j > 1 && j % 13 == 0)
+                            cadAux = cadAux + "<br>";
+                    }
                 } else {
-                    doc.insertString(doc.getLength(), txt, dcha);
-                    doc.setParagraphAttributes(doc.getLength(), 1, dcha, false);
+                    cadAux = cad[i];
                 }
-            } catch (BadLocationException e) {
-                e.printStackTrace();
+                cadena = cadena + " " + cadAux;
             }
-            // para que el scroll baje automáticamente
-            txpChat.setCaretPosition(doc.getLength());
+
+
+            if (enviadoPorMi)
+                jug =
+                        "<div align=left style=\"" +
+                                "font-family: " + scpChat.getFont().getFamily() + ";" +
+                                "font-size: 10px;" +
+                                "height: auto; " +
+                                "color: #000000;" +
+                                "background-color: #dfdfdf; " +
+                                "border-style: solid; " +
+                                "border-width: 1pt; " +
+                                "padding: 5px; " +
+                                "margin: 1px;" +
+                                "margin-right: " + scpChat.getWidth() * 1 / 3 + ";" +
+                                "\">" +
+                                "<b>" + jug + ":</b><br>";
+            else
+                jug =
+                        "<div align=right style=\"" +
+                                "font-family: " + scpChat.getFont().getFamily() + ";" +
+                                "font-size: 10px;" +
+                                "height: auto; " +
+                                "color: #000000;" +
+                                "background-color: #FFFFFF; " +
+                                "border-style: solid; " +
+                                "border-width: 1pt; " +
+                                "padding: 5px; " +
+                                "margin: 1px;" +
+                                "margin-left: " + scpChat.getWidth() * 1 / 3 + ";" +
+                                "\">" +
+                                "<b>" + jug + ":</b><br>";
+
+            String txt = jug + cadena + "</div>";
+            cadenaChat = cadenaChat + txt;
+            edpChat.setText(cadenaChat);
+            // desplazamos jeditorpane hasta abajo
+            SwingUtilities.invokeLater(() -> scpChat.getVerticalScrollBar().setValue(scpChat.getVerticalScrollBar().getMaximum()));
         } else if (mensaje instanceof MensajeMovimiento) {
             try {
                 MensajeMovimiento m = (MensajeMovimiento) mensaje;
@@ -665,6 +701,7 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
                 }
             } else {
                 synchronized (this) {
+                    this.setEnabled(true);
                     notify(); // avisamos de que la interfaz ya puede volver a funcionar de manera normal
                 }
                 // si se recibe un mensaje en el que se acepta la rendición
@@ -872,22 +909,23 @@ public class Interfaz extends JFrame implements ActionListener, KeyListener {
             // enviamos mensaje de empate y deshabilitamos btnEmpate
             enviarMensajeEmpate(true, true);
             btnEmpate.setEnabled(false);
+
             // creamos un jdialog que informe de que estamos a la espera
             JDialog jDialog = new JDialog(this);
-            jDialog.setTitle("Tablas");
-            JLabel lbl = new JLabel("Esperando respuesta de solicitud de empate.");
-            lbl.setBorder(new EmptyBorder(ESPACIO, ESPACIO, ESPACIO, ESPACIO));
-            jDialog.add(lbl);
-            jDialog.setVisible(true);
+            jDialog.setTitle("Esperando respuesta de solicitud de empate.");
+            jDialog.setSize(280, jDialog.getHeight());
             jDialog.setResizable(false);
-            jDialog.pack();
-            jDialog.setLocationRelativeTo(this);
+            jDialog.setLocationRelativeTo(pnlTablero);
+
             // hacemos esperar al programa
             synchronized (this) {
                 try {
+                    jDialog.setVisible(true);
+                    this.setEnabled(false);
                     wait(); // esperamos hasta que se invoque a notify al recibir un mensajeempate
                 } catch (InterruptedException ex) { }
             }
+
             jDialog.dispose(); // cerramos jdialog a la orden del notify
         }
     }
